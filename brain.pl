@@ -68,41 +68,56 @@ brain(1, Code, I, O, Ms, M, S) :- brain(Code, I, O, Ms, M, S).
 brain(2, Code, I, O, Ms, M, S) :- brain(Code, I, O, Ms, M, S).
 
 % [
+% Check if the current memory is zero and call loop start handler
 brain(91, Code, I, O, Ms, [M|Mt], S) :-
     map_code(M, _, Z, _),
     loop_start(Z, Code, I, O, Ms, [M|Mt], S).
 
 % ]
+% Check if current memory is zero and call loop end handler
 brain(93, Code, I, O, Ms, [M|Mt], S) :-
     map_code(M, _, Z, _),
     loop_end(Z, Code, I, O, Ms, [M|Mt], S).
 
 % ,
+% Input is passed in as a parameter, move the next input from the
+% input list into the current memory address.
 brain(44, [C|Code], [I|It], O, Ms, [_|Mt], S) :-
     brain(C, Code, It, O, Ms, [I|Mt], S).
 
 % .
+% Output is recorded as a list so add to the start of the output list
+% then append the rest of the output in subsequent calls.
 brain(46, Code, I, [M|O], Ms, [M|Mt], S) :-
     brain(Code, I, O, Ms, [M|Mt], S).
 
 % >
+% Move the memory one space to the right, this has a special predicate
+% to eliminate choice points.
 brain(62, Code, I, O, Ms, [M|Mt], S) :-
     mem_shift_right(Mt, Code, I, O, Ms, [M|Mt], S).
 
 % <
+% Move the memory one space to the left, this will fail if the memory
+% hasn't been moved right yet. Pop the top of the memory stack and add
+% it to the memory list.
 brain(60, [C|Code], I, O, [M|Ms], Mt, S) :-
     brain(C, Code, I, O, Ms, [M|Mt], S).
 
 % -
+% Subtract one from the current memory address.
 brain(45, [C|Code], I, O, Ms, [M|Mt], S) :-
     map_code(M1, M, _, _),
     brain(C, Code, I, O, Ms, [M1|Mt], S).
 
 % +
+% Add one to the current memory address.
 brain(43, [C|Code], I, O, Ms, [M|Mt], S) :-
     map_code(M, M1, _, _),
     brain(C, Code, I, O, Ms, [M1|Mt], S).
 
+% When shifting right, a new memory cell might be required,
+% if not then push the current cell on to the memory stack.
 mem_shift_right([], [C|Code], I, O, Ms, [M], S) :-
     brain(C, Code, I, O, [M|Ms], [0], S).
 mem_shift_right([_|_], [C|Code], I, O, Ms, [M|Mt], S) :-
